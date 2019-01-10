@@ -20,7 +20,8 @@ public class MP3TagEditor {
         File f = new File("mp3files/SampleAudio_0.4mb.mp3");
         MP3TagHandler handler = new MP3TagHandler(f);
         handler.setSongTitle("Test");
-        System.out.println("Title" + handler.getSongTitle());
+        System.out.println("Title: " + handler.getSongTitle());
+        System.out.println("Artist: " + handler.getArtist());
     }
     /**
      * @param args the command line arguments

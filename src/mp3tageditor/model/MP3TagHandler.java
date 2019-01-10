@@ -6,8 +6,8 @@
 package mp3tageditor.model;
 
 import java.io.File;
-import org.farng.mp3.AbstractMP3Tag;
 import org.farng.mp3.MP3File;
+import org.farng.mp3.id3.ID3v1;
 
 /**
  *
@@ -16,7 +16,7 @@ import org.farng.mp3.MP3File;
 public class MP3TagHandler {
     private File sourceFile;
     private MP3File mp3File;
-    private AbstractMP3Tag mp3Tags;
+    private ID3v1 mp3Tags;
 
     public MP3TagHandler(File sourceFile) throws Exception {
         this.sourceFile = sourceFile;
@@ -53,19 +53,39 @@ public class MP3TagHandler {
         this.setMP3File();
     }
     
-    public void setSongTitle(String title) throws Exception {
+    public void setSongTitle(String title) throws Exception {        
         if (this.mp3File!=null) {            
-            this.mp3File.getID3v1Tag().setSongTitle(title);
-            this.mp3File.save();
+            if (this.mp3Tags==null) {                
+                this.mp3Tags = new ID3v1();
+                System.out.println("New ID3v1 created!");
+            }
+            this.mp3Tags.setTitle(title);
+            this.mp3File.setID3v1Tag(this.mp3Tags);            
+            this.mp3File.save(this.sourceFile);
         }
     }
    
+    public String getTitle() throws Exception {
+       String res = null;
+       if (this.mp3Tags!=null) {
+           res = this.mp3Tags.getTitle();
+       }
+       return res;        
+    }
+    
     public String getSongTitle() throws Exception {
        String res = null;
-       if (this.mp3File!=null) {
-           res = this.mp3File.getID3v1Tag().getSongTitle();
+       if (this.mp3Tags!=null) {
+           res = this.mp3Tags.getSongTitle();
        }
        return res;
     }    
     
+    public String getArtist() throws Exception {
+        String res = null;
+        if (this.mp3Tags!=null) {
+            res = this.mp3Tags.getArtist();
+        }
+        return res;
+    }
 }
