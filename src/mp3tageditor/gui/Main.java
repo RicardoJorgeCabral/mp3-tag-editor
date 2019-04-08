@@ -19,6 +19,11 @@ import java.util.stream.Stream;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+import mp3tageditor.model.Mp3Element;
+import mp3tageditor.model.Mp3TagHandler;
 
 /**
  *
@@ -27,7 +32,7 @@ import javax.swing.JOptionPane;
 public class Main extends javax.swing.JFrame {
 
   final JFileChooser fc = new JFileChooser();  
-  private List<File> fileList = new ArrayList<File>();
+  private List<Mp3Element> mp3List = new ArrayList<Mp3Element>();
   /**
    * Creates new form Main
    */
@@ -35,16 +40,65 @@ public class Main extends javax.swing.JFrame {
     fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
     fc.setAcceptAllFileFilterUsed(false);
     initComponents();
+    this.formatFilesTable();
+    
   }
-
-  private void setListFiles() throws Exception {
-    jListFiles.removeAll();
-    DefaultListModel listModel = new DefaultListModel();
-    for (File f : this.fileList) {
-      listModel.addElement(f.getName());
+  
+  private void formatFilesTable() {
+    TableColumn column = null;
+    for (int i = 0; i < 5; i++) {
+      column = this.jTableFiles.getColumnModel().getColumn(i);
+      if (i == 2) {
+        column.setPreferredWidth(20); //third column is bigger
+      } else {
+        column.setPreferredWidth(200);
+      }
     }
-    jListFiles.setModel(listModel);
   }
+  /*
+  private void initFilesTable() {
+    FileListTableModel model = new FileListTableModel();
+    Object[][] data = new Object[this.mp3List.size()][model.getColumnCount()];
+    int i = 0;
+    for (Mp3Element mp3 : this.mp3List) {
+       //"File Name", "New File Name", "Track #", "Title", "Artist", "Album"
+      data[i][0] = mp3.getFileName();
+      data[i][1] = mp3.getNewFileName();
+      data[i][2] = mp3.getTrackNumber();
+      data[i][3] = mp3.getTitle();
+      data[i][4] = mp3.getArtist();
+      data[i][5] = mp3.getAlbum();
+      i++;
+    }
+    model.setData(data);
+    this.jTableFiles = new JTable(model);    
+    
+  }
+  */
+  private FileListTableModel fillFilesTable() {    
+    Object[][] data = new Object[this.mp3List.size()][6];
+    int i = 0;
+    for (Mp3Element mp3 : this.mp3List) {
+      data[i][0] = mp3.getFileName();
+      data[i][1] = mp3.getNewFileName();
+      data[i][2] = mp3.getTrackNumber();
+      data[i][3] = mp3.getTitle();
+      data[i][4] = mp3.getArtist();
+      data[i][5] = mp3.getAlbum();      
+      /*
+      this.jTableFiles.getModel().setValueAt(mp3.getFileName(), i, 0);
+      this.jTableFiles.getModel().setValueAt(mp3.getNewFileName(), i, 1);
+      this.jTableFiles.getModel().setValueAt(mp3.getTrackNumber(), i, 2);
+      this.jTableFiles.getModel().setValueAt(mp3.getTitle(), i, 3);
+      this.jTableFiles.getModel().setValueAt(mp3.getArtist(), i, 4);
+      this.jTableFiles.getModel().setValueAt(mp3.getAlbum(), i, 5);      
+      */
+      i++;
+    }
+    FileListTableModel model = new FileListTableModel(data);
+    return model;
+  }
+    
   /**
    * This method is called from within the constructor to initialize the form.
    * WARNING: Do NOT modify this code. The content of this method is always
@@ -59,27 +113,14 @@ public class Main extends javax.swing.JFrame {
     tfWorkingFolder = new javax.swing.JTextField();
     jButton1 = new javax.swing.JButton();
     jLabel2 = new javax.swing.JLabel();
-    jScrollPane1 = new javax.swing.JScrollPane();
-    jListFiles = new javax.swing.JList<>();
-    jPanel2 = new javax.swing.JPanel();
-    jLabel3 = new javax.swing.JLabel();
-    jLabel4 = new javax.swing.JLabel();
-    jLabel5 = new javax.swing.JLabel();
-    tfFileName = new javax.swing.JTextField();
-    tfDiscNumber = new javax.swing.JTextField();
-    tfTrackNumber = new javax.swing.JTextField();
-    jLabel6 = new javax.swing.JLabel();
-    jLabel7 = new javax.swing.JLabel();
-    jLabel10 = new javax.swing.JLabel();
-    tfTitle = new javax.swing.JTextField();
-    tfAlbum = new javax.swing.JTextField();
-    tfArtist = new javax.swing.JTextField();
-    jButton3 = new javax.swing.JButton();
     jLabel8 = new javax.swing.JLabel();
     tfAlbumForList = new javax.swing.JTextField();
     jLabel9 = new javax.swing.JLabel();
     tfArtistiForList = new javax.swing.JTextField();
     jButton2 = new javax.swing.JButton();
+    jScrollPane1 = new javax.swing.JScrollPane();
+    jScrollPane2 = new javax.swing.JScrollPane();
+    jTableFiles = new javax.swing.JTable();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -126,128 +167,38 @@ public class Main extends javax.swing.JFrame {
 
     jLabel2.setText("Folder Content:");
 
-    jScrollPane1.setViewportView(jListFiles);
-
-    jPanel2.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-
-    jLabel3.setText("New file name:");
-
-    jLabel4.setText("Disc #:");
-
-    jLabel5.setText("Track #:");
-
-    tfFileName.setToolTipText("");
-
-    tfDiscNumber.setColumns(5);
-    tfDiscNumber.setToolTipText("");
-
-    tfTrackNumber.setColumns(5);
-    tfTrackNumber.setToolTipText("");
-
-    jLabel6.setText("Title:");
-
-    jLabel7.setText("Album:");
-
-    jLabel10.setText("Artist:");
-
-    tfArtist.setToolTipText("");
-
-    jButton3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
-    jButton3.setText("UPDATE");
-
-    javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-    jPanel2.setLayout(jPanel2Layout);
-    jPanel2Layout.setHorizontalGroup(
-      jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(jPanel2Layout.createSequentialGroup()
-        .addContainerGap()
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(jLabel3)
-          .addComponent(jLabel4)
-          .addComponent(jLabel6)
-          .addComponent(jLabel7)
-          .addComponent(jLabel10))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-          .addComponent(tfFileName)
-          .addComponent(tfTitle)
-          .addComponent(tfAlbum)
-          .addGroup(jPanel2Layout.createSequentialGroup()
-            .addComponent(tfDiscNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addGap(18, 18, 18)
-            .addComponent(jLabel5)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(tfTrackNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addGap(0, 582, Short.MAX_VALUE))
-          .addComponent(tfArtist))
-        .addContainerGap())
-    );
-    jPanel2Layout.setVerticalGroup(
-      jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(jPanel2Layout.createSequentialGroup()
-        .addContainerGap()
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel3)
-          .addComponent(tfFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel4)
-          .addComponent(jLabel5)
-          .addComponent(tfDiscNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-          .addComponent(tfTrackNumber, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel6)
-          .addComponent(tfTitle, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel7)
-          .addComponent(tfAlbum, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel10)
-          .addComponent(tfArtist, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(jButton3)
-        .addContainerGap(364, Short.MAX_VALUE))
-    );
-
     jLabel8.setText("Set Album for List:");
 
     jLabel9.setText("Set Artist for List:");
 
     jButton2.setText("Set");
 
+    jTableFiles.setModel(fillFilesTable());
+    jScrollPane2.setViewportView(jTableFiles);
+
+    jScrollPane1.setViewportView(jScrollPane2);
+
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
     getContentPane().setLayout(layout);
     layout.setHorizontalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(layout.createSequentialGroup()
+      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
         .addContainerGap()
-        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-          .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+          .addComponent(jScrollPane1)
+          .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+          .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+            .addComponent(jLabel2)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(jButton2))
           .addGroup(layout.createSequentialGroup()
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-              .addGroup(layout.createSequentialGroup()
-                .addComponent(jLabel2)
-                .addGap(264, 264, 264))
-              .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 334, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
+              .addComponent(jLabel9)
+              .addComponent(jLabel8))
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-              .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-              .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                  .addComponent(jLabel9)
-                  .addComponent(jLabel8))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                  .addComponent(tfAlbumForList)
-                  .addComponent(tfArtistiForList)))
-              .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton2)))))
+              .addComponent(tfAlbumForList, javax.swing.GroupLayout.DEFAULT_SIZE, 1082, Short.MAX_VALUE)
+              .addComponent(tfArtistiForList, javax.swing.GroupLayout.DEFAULT_SIZE, 1082, Short.MAX_VALUE))))
         .addContainerGap())
     );
     layout.setVerticalGroup(
@@ -257,20 +208,21 @@ public class Main extends javax.swing.JFrame {
         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-          .addComponent(jLabel2)
           .addComponent(jLabel8)
           .addComponent(tfAlbumForList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(jLabel9)
+          .addComponent(tfArtistiForList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addGroup(layout.createSequentialGroup()
-            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-              .addComponent(jLabel9)
-              .addComponent(tfArtistiForList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGap(18, 18, 18)
+            .addComponent(jLabel2))
+          .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(jButton2)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-          .addComponent(jScrollPane1))
+            .addComponent(jButton2)))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 531, Short.MAX_VALUE)
         .addContainerGap())
     );
 
@@ -281,7 +233,7 @@ public class Main extends javax.swing.JFrame {
     // TODO add your handling code here:
     int returnVal = fc.showOpenDialog(this);
     if (returnVal == JFileChooser.APPROVE_OPTION) { 
-      fileList.clear();
+      this.mp3List.clear();
       String workingPath = fc.getSelectedFile().toString();
       tfWorkingFolder.setText(workingPath);
       //JOptionPane.showMessageDialog(this, ex, "Error", JOptionPane.ERROR_MESSAGE);      
@@ -291,9 +243,19 @@ public class Main extends javax.swing.JFrame {
         //result.forEach(System.out::println);
         for (String file : files) {
           File f = new File(file);
-          fileList.add(f);          
+          Mp3Element el = new Mp3Element();
+          Mp3TagHandler handler = new Mp3TagHandler(f);          
+          el.setMp3File(f);
+          el.setFileName(f.getName());
+          String newFileName = String.format("%02d", handler.getTrackNumber().intValue()) + "." + f.getName();
+          el.setNewFileName(newFileName);
+          el.setTrackNumber(handler.getTrackNumber());
+          el.setAlbum(handler.getAlbum());
+          el.setArtist(handler.getArtist());
+          el.setTitle(handler.getSongTitle());          
+          this.mp3List.add(el);
         }
-        this.setListFiles();
+        this.jTableFiles.setModel(fillFilesTable());
       } catch (Exception e) {
         JOptionPane.showMessageDialog(this, e, "Error", JOptionPane.ERROR_MESSAGE);      
         e.printStackTrace();
@@ -339,29 +301,64 @@ public class Main extends javax.swing.JFrame {
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JButton jButton1;
   private javax.swing.JButton jButton2;
-  private javax.swing.JButton jButton3;
   private javax.swing.JLabel jLabel1;
-  private javax.swing.JLabel jLabel10;
   private javax.swing.JLabel jLabel2;
-  private javax.swing.JLabel jLabel3;
-  private javax.swing.JLabel jLabel4;
-  private javax.swing.JLabel jLabel5;
-  private javax.swing.JLabel jLabel6;
-  private javax.swing.JLabel jLabel7;
   private javax.swing.JLabel jLabel8;
   private javax.swing.JLabel jLabel9;
-  private javax.swing.JList<String> jListFiles;
   private javax.swing.JPanel jPanel1;
-  private javax.swing.JPanel jPanel2;
   private javax.swing.JScrollPane jScrollPane1;
-  private javax.swing.JTextField tfAlbum;
+  private javax.swing.JScrollPane jScrollPane2;
+  private javax.swing.JTable jTableFiles;
   private javax.swing.JTextField tfAlbumForList;
-  private javax.swing.JTextField tfArtist;
   private javax.swing.JTextField tfArtistiForList;
-  private javax.swing.JTextField tfDiscNumber;
-  private javax.swing.JTextField tfFileName;
-  private javax.swing.JTextField tfTitle;
-  private javax.swing.JTextField tfTrackNumber;
   private javax.swing.JTextField tfWorkingFolder;
   // End of variables declaration//GEN-END:variables
+}
+
+class FileListTableModel extends AbstractTableModel {
+  private String[] columnNames = { "File Name", "New File Name", "Track #", "Title", "Artist", "Album" };
+  private Object[][] data;
+    
+  public FileListTableModel(Object[][] list) {
+    this.data = list;
+  }
+  
+  public void setData(Object[][] list) {
+    this.data = list;
+  }
+  
+  public int getColumnCount() {
+    return columnNames.length;
+  }
+
+  public int getRowCount() {
+    return data.length;
+  }
+
+  public String getColumnName(int col) {
+    return columnNames[col];
+  }
+
+  public Object getValueAt(int row, int col) {
+    return data[row][col];
+  }
+
+  public Class getColumnClass(int c) {
+    return getValueAt(0, c).getClass();
+  }
+
+  public boolean isCellEditable(int row, int col) {
+  //Note that the data/cell address is constant,
+  //no matter where the cell appears onscreen.
+    if (col < 1) {
+        return false;
+    } else {
+        return true;
+    }
+  }
+
+  public void setValueAt(Object value, int row, int col) {
+    data[row][col] = value;
+    fireTableCellUpdated(row, col);
+  }
 }

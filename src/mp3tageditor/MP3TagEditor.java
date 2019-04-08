@@ -8,7 +8,7 @@ package mp3tageditor;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import mp3tageditor.model.MP3TagHandler;
+import mp3tageditor.model.Mp3TagHandler;
 
 /**
  *
@@ -18,7 +18,7 @@ public class MP3TagEditor {
 
     private static void test1() throws Exception {
         File f = new File("mp3files/SampleAudio_0.4mb.mp3");
-        MP3TagHandler handler = new MP3TagHandler(f);
+        Mp3TagHandler handler = new Mp3TagHandler(f);
         handler.setSongTitle("Test");
         
         System.out.println("Title: " + handler.getSongTitle());

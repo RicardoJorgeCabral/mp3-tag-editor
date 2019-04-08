@@ -13,17 +13,17 @@ import org.farng.mp3.id3.ID3v1;
  *
  * @author Ricardoc
  */
-public class MP3TagHandler {
+public class Mp3TagHandler {
     private File sourceFile;
     private MP3File mp3File;
     private ID3v1 mp3Tags;
 
-    public MP3TagHandler(File sourceFile) throws Exception {
+    public Mp3TagHandler(File sourceFile) throws Exception {
         this.sourceFile = sourceFile;
         this.setMP3File();
     }
 
-    public MP3TagHandler() {
+    public Mp3TagHandler() {
         this.nullify();
     }
     
@@ -79,13 +79,31 @@ public class MP3TagHandler {
            res = this.mp3Tags.getSongTitle();
        }
        return res;
-    }    
+    }  
+    
+    public Integer getTrackNumber() throws Exception {
+      String res = null;
+      Integer num = null;
+      if (this.mp3Tags!=null) {
+        res = this.mp3Tags.getTrackNumberOnAlbum();
+        num = Integer.parseInt(res);
+      }
+      return num;
+    }
     
     public String getArtist() throws Exception {
-        String res = null;
-        if (this.mp3Tags!=null) {
-            res = this.mp3Tags.getArtist();
-        }
-        return res;
+      String res = null;
+      if (this.mp3Tags!=null) {
+          res = this.mp3Tags.getArtist();
+      }
+      return res;
+    }
+    
+    public String getAlbum() throws Exception {
+      String res = null;
+      if (this.mp3Tags!=null) {
+          res = this.mp3Tags.getAlbum();
+      }
+      return res;
     }
 }
