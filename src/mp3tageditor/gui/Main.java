@@ -7,6 +7,7 @@ package mp3tageditor.gui;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,6 +21,8 @@ import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import mp3tageditor.model.Mp3Element;
@@ -42,6 +45,13 @@ public class Main extends javax.swing.JFrame {
     initComponents();
     this.formatFilesTable();
     
+    jTableFiles.getModel().addTableModelListener((TableModelEvent ev) -> {
+      if (ev.getType() == TableModelEvent.UPDATE) {
+        System.out.println("Cell " + ev.getFirstRow() + ", " + ev.getColumn() + " changed."
+                + " The new value: " + jTableFiles.getModel().getValueAt(ev.getFirstRow(), ev.getColumn()));
+      }
+    });
+    
   }
   
   private void formatFilesTable() {
@@ -49,7 +59,7 @@ public class Main extends javax.swing.JFrame {
     for (int i = 0; i < 5; i++) {
       column = this.jTableFiles.getColumnModel().getColumn(i);
       if (i == 2) {
-        column.setPreferredWidth(20); //third column is bigger
+        column.setPreferredWidth(20);
       } else {
         column.setPreferredWidth(200);
       }
@@ -96,9 +106,97 @@ public class Main extends javax.swing.JFrame {
       i++;
     }
     FileListTableModel model = new FileListTableModel(data);
+    model.addTableModelListener((TableModelEvent ev) -> {
+      if (ev.getType() == TableModelEvent.UPDATE) {
+        int row = ev.getFirstRow();
+        int col = ev.getColumn();
+        if ( (col==2) || (col==3) ) {
+          // Track number changed
+          String newFileName = String.format("%02d",jTableFiles.getModel().getValueAt(row,2)) + "." + jTableFiles.getModel().getValueAt(row,3);
+          jTableFiles.getModel().setValueAt(newFileName, row, 1);
+        }
+      }
+    });
     return model;
   }
-    
+  
+  private boolean preChangesVerification() {
+    for (Mp3Element el : this.mp3List) {
+      File fileOrig = el.getMp3File();
+      File fileDest = new File(fileOrig.getParent() + "\\" + el.getNewFileName() + ".mp3");
+      //System.out.println(fileOrig.getAbsolutePath() + " --> " + fileDest.getAbsolutePath());
+      if ( (fileDest.exists()) && (!fileOrig.getAbsoluteFile().equals(fileDest.getAbsoluteFile())) ) {
+        String msg = "Cannot rename file to " + el.getNewFileName() + "!\nA file with the same name exists.";
+        JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);  
+        return false;
+      }
+      for (Mp3Element subEl : this.mp3List) {
+        if (!el.equals(subEl)) {
+          if (el.getNewFileName().equals(subEl.getFileName())) {
+            String msg = "Cannot rename file to " + el.getNewFileName() + "!\nA file with the same name exists.";
+            JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);  
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+  
+  private boolean processChanges() {
+    if (preChangesVerification()) {
+      try {
+        for (Mp3Element el : this.mp3List) {
+          File f = el.getMp3File();
+          File newFile = new File(f.getParent() + "\\" + el.getNewFileName() + ".mp3");
+          f.renameTo(newFile);
+          Mp3TagHandler handler = new Mp3TagHandler();
+          handler.setSourceFile(newFile);
+          handler.setAlbum(el.getAlbum());
+          handler.setArtist(el.getArtist());
+          handler.setSongTitle(el.getTitle());
+          handler.setTrackNumber(el.getTrackNumber());
+        }      
+      }
+      catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, ex, "Error", JOptionPane.ERROR_MESSAGE);      
+        ex.printStackTrace();
+        return false;
+      }
+      return true;
+    }
+    return false;
+  }
+  
+  private void showDataTable() {
+    this.mp3List.clear();
+      String workingPath = fc.getSelectedFile().toString();
+      tfWorkingFolder.setText(workingPath);
+      //JOptionPane.showMessageDialog(this, ex, "Error", JOptionPane.ERROR_MESSAGE);      
+      try (Stream<Path> walk = Files.walk(Paths.get(workingPath))) {
+        List<String> files = walk.map(x -> x.toString())
+                .filter(f -> f.endsWith(".mp3")).collect(Collectors.toList());
+        //result.forEach(System.out::println);
+        for (String file : files) {
+          File f = new File(file);
+          Mp3Element el = new Mp3Element();
+          Mp3TagHandler handler = new Mp3TagHandler(f);          
+          el.setMp3File(f);
+          el.setFileName(f.getName());
+          String newFileName = String.format("%02d", handler.getTrackNumber().intValue()) + "." + handler.getSongTitle();
+          el.setNewFileName(newFileName);
+          el.setTrackNumber(handler.getTrackNumber());
+          el.setAlbum(handler.getAlbum());
+          el.setArtist(handler.getArtist());
+          el.setTitle(handler.getSongTitle());          
+          this.mp3List.add(el);
+        }
+        this.jTableFiles.setModel(fillFilesTable());
+      } catch (Exception e) {
+        JOptionPane.showMessageDialog(this, e, "Error", JOptionPane.ERROR_MESSAGE);      
+        e.printStackTrace();
+      }
+  }
   /**
    * This method is called from within the constructor to initialize the form.
    * WARNING: Do NOT modify this code. The content of this method is always
@@ -116,11 +214,12 @@ public class Main extends javax.swing.JFrame {
     jLabel8 = new javax.swing.JLabel();
     tfAlbumForList = new javax.swing.JTextField();
     jLabel9 = new javax.swing.JLabel();
-    tfArtistiForList = new javax.swing.JTextField();
+    tfArtistForList = new javax.swing.JTextField();
     jButton2 = new javax.swing.JButton();
     jScrollPane1 = new javax.swing.JScrollPane();
     jScrollPane2 = new javax.swing.JScrollPane();
     jTableFiles = new javax.swing.JTable();
+    jButton3 = new javax.swing.JButton();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -172,33 +271,49 @@ public class Main extends javax.swing.JFrame {
     jLabel9.setText("Set Artist for List:");
 
     jButton2.setText("Set");
+    jButton2.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButton2ActionPerformed(evt);
+      }
+    });
 
     jTableFiles.setModel(fillFilesTable());
     jScrollPane2.setViewportView(jTableFiles);
 
     jScrollPane1.setViewportView(jScrollPane2);
 
+    jButton3.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+    jButton3.setText("Update MP3 Info");
+    jButton3.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jButton3ActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
     getContentPane().setLayout(layout);
     layout.setHorizontalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+      .addGroup(layout.createSequentialGroup()
         .addContainerGap()
-        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-          .addComponent(jScrollPane1)
-          .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-          .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING)
+          .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+          .addGroup(layout.createSequentialGroup()
             .addComponent(jLabel2)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(jButton2))
-          .addGroup(layout.createSequentialGroup()
+          .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addComponent(jLabel9)
               .addComponent(jLabel8))
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addComponent(tfAlbumForList, javax.swing.GroupLayout.DEFAULT_SIZE, 1082, Short.MAX_VALUE)
-              .addComponent(tfArtistiForList, javax.swing.GroupLayout.DEFAULT_SIZE, 1082, Short.MAX_VALUE))))
+              .addComponent(tfArtistForList, javax.swing.GroupLayout.DEFAULT_SIZE, 1082, Short.MAX_VALUE)))
+          .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGap(0, 0, Short.MAX_VALUE)
+            .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 235, javax.swing.GroupLayout.PREFERRED_SIZE)))
         .addContainerGap())
     );
     layout.setVerticalGroup(
@@ -213,7 +328,7 @@ public class Main extends javax.swing.JFrame {
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
           .addComponent(jLabel9)
-          .addComponent(tfArtistiForList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+          .addComponent(tfArtistForList, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addGroup(layout.createSequentialGroup()
             .addGap(18, 18, 18)
@@ -222,7 +337,9 @@ public class Main extends javax.swing.JFrame {
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addComponent(jButton2)))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 531, Short.MAX_VALUE)
+        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 500, Short.MAX_VALUE)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(jButton3)
         .addContainerGap())
     );
 
@@ -233,35 +350,50 @@ public class Main extends javax.swing.JFrame {
     // TODO add your handling code here:
     int returnVal = fc.showOpenDialog(this);
     if (returnVal == JFileChooser.APPROVE_OPTION) { 
-      this.mp3List.clear();
-      String workingPath = fc.getSelectedFile().toString();
-      tfWorkingFolder.setText(workingPath);
-      //JOptionPane.showMessageDialog(this, ex, "Error", JOptionPane.ERROR_MESSAGE);      
-      try (Stream<Path> walk = Files.walk(Paths.get(workingPath))) {
-        List<String> files = walk.map(x -> x.toString())
-                .filter(f -> f.endsWith(".mp3")).collect(Collectors.toList());
-        //result.forEach(System.out::println);
-        for (String file : files) {
-          File f = new File(file);
-          Mp3Element el = new Mp3Element();
-          Mp3TagHandler handler = new Mp3TagHandler(f);          
-          el.setMp3File(f);
-          el.setFileName(f.getName());
-          String newFileName = String.format("%02d", handler.getTrackNumber().intValue()) + "." + f.getName();
-          el.setNewFileName(newFileName);
-          el.setTrackNumber(handler.getTrackNumber());
-          el.setAlbum(handler.getAlbum());
-          el.setArtist(handler.getArtist());
-          el.setTitle(handler.getSongTitle());          
-          this.mp3List.add(el);
-        }
-        this.jTableFiles.setModel(fillFilesTable());
-      } catch (Exception e) {
-        JOptionPane.showMessageDialog(this, e, "Error", JOptionPane.ERROR_MESSAGE);      
-        e.printStackTrace();
-      }
+      this.showDataTable();
     }
   }//GEN-LAST:event_jButton1ActionPerformed
+
+  private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+    // TODO add your handling code here:
+    if ( (tfAlbumForList.getText().length()>0) ||
+         (tfArtistForList.getText().length()>0)) {
+      String album = tfAlbumForList.getText();
+      String artist = tfArtistForList.getText();
+      
+      for (Mp3Element it : this.mp3List) {
+        if (album.length()>0) {
+          it.setAlbum(album);
+        }
+        if (artist.length()>0) {
+          it.setArtist(artist);
+        }
+      }
+      this.jTableFiles.setModel(fillFilesTable());
+    }
+  }//GEN-LAST:event_jButton2ActionPerformed
+
+  private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+    // TODO add your handling code here:
+    int dialogResult = JOptionPane.showConfirmDialog (this, "Do you want to process the changes?","Confirm",JOptionPane.YES_NO_OPTION);
+    if(dialogResult == JOptionPane.YES_OPTION){
+      this.mp3List.clear();
+      FileListTableModel model = (FileListTableModel) this.jTableFiles.getModel();
+      for (int i=0; i<model.getRowCount(); i++) {
+        Mp3Element el = new Mp3Element();
+        el.setMp3File(new File((String) model.getValueAt(i, 0)));
+        el.setNewFileName((String) model.getValueAt(i, 1));
+        el.setTrackNumber((Integer) model.getValueAt(i, 2));
+        el.setTitle((String) model.getValueAt(i, 3));
+        el.setArtist((String) model.getValueAt(i, 4));
+        el.setAlbum((String) model.getValueAt(i, 5));
+      }
+      this.showDataTable();
+      if (this.processChanges()) {
+        JOptionPane.showMessageDialog(this,"Changes done!","Info",JOptionPane.INFORMATION_MESSAGE);
+      }
+    }
+  }//GEN-LAST:event_jButton3ActionPerformed
 
   /**
    * @param args the command line arguments
@@ -301,6 +433,7 @@ public class Main extends javax.swing.JFrame {
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JButton jButton1;
   private javax.swing.JButton jButton2;
+  private javax.swing.JButton jButton3;
   private javax.swing.JLabel jLabel1;
   private javax.swing.JLabel jLabel2;
   private javax.swing.JLabel jLabel8;
@@ -310,7 +443,7 @@ public class Main extends javax.swing.JFrame {
   private javax.swing.JScrollPane jScrollPane2;
   private javax.swing.JTable jTableFiles;
   private javax.swing.JTextField tfAlbumForList;
-  private javax.swing.JTextField tfArtistiForList;
+  private javax.swing.JTextField tfArtistForList;
   private javax.swing.JTextField tfWorkingFolder;
   // End of variables declaration//GEN-END:variables
 }

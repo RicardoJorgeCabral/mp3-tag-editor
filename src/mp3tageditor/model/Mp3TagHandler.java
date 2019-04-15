@@ -91,6 +91,18 @@ public class Mp3TagHandler {
       return num;
     }
     
+    public void setTrackNumber(Integer trackNumber) throws Exception {        
+        if (this.mp3File!=null) {            
+            if (this.mp3Tags==null) {                
+                this.mp3Tags = new ID3v1();
+                System.out.println("New ID3v1 created!");
+            }
+            this.mp3Tags.setTrackNumberOnAlbum(trackNumber.toString()); 
+            this.mp3File.setID3v1Tag(this.mp3Tags);            
+            this.mp3File.save(this.sourceFile);
+        }
+    }
+    
     public String getArtist() throws Exception {
       String res = null;
       if (this.mp3Tags!=null) {
@@ -99,11 +111,35 @@ public class Mp3TagHandler {
       return res;
     }
     
+    public void setArtist(String artist) throws Exception {        
+        if (this.mp3File!=null) {            
+            if (this.mp3Tags==null) {                
+                this.mp3Tags = new ID3v1();
+                System.out.println("New ID3v1 created!");
+            }
+            this.mp3Tags.setArtist(artist);
+            this.mp3File.setID3v1Tag(this.mp3Tags);            
+            this.mp3File.save(this.sourceFile);
+        }
+    }
+    
     public String getAlbum() throws Exception {
       String res = null;
       if (this.mp3Tags!=null) {
           res = this.mp3Tags.getAlbum();
       }
       return res;
+    }
+    
+    public void setAlbum(String album) throws Exception {        
+      if (this.mp3File!=null) {            
+          if (this.mp3Tags==null) {                
+              this.mp3Tags = new ID3v1();
+              System.out.println("New ID3v1 created!");
+          }
+          this.mp3Tags.setAlbum(album);
+          this.mp3File.setID3v1Tag(this.mp3Tags);            
+          this.mp3File.save(this.sourceFile);
+      }
     }
 }
